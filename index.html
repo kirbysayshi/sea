@@ -1,0 +1,73 @@
+<style type="text/css">
+body { position: relative; padding: 1px 0 0 0; margin: 0; overflow: hidden; }
+div { background-color: red; width: 50px; height: 50px; position: absolute; }
+</style>
+<div></div>
+<p></p>
+<p></p>
+<ul></ul>
+<p><span data-text="pos.x()"></span> <span data-text="pos.y()"></span></p>
+<ul data-foreach="items()">
+	<li data-text="typeof $data === 'function' ? $data() : $data"></li>
+</ul>
+<script type="text/javascript" src="index.mini.js"></script>
+<script type="text/javascript" src="dom.js"></script>
+<script type="text/javascript">
+var pos = {
+      x: sea.observable(0)//.throttle(500)
+    , y: sea.observable(0)//.throttle(500)
+}
+
+var el = document.querySelector('div');
+var elComp = sea.computed(function(){
+    el.style.left = pos.x() + 'px'
+    el.style.top = pos.y() + 'px'
+})
+
+var p = document.querySelector('p')
+var pComp = sea.computed(function(){
+    p.textContent = pos.x() + ' ' + pos.y();
+})
+
+document.addEventListener('mousemove', function(e){
+    //console.log('move', e.pageX, e.pageY)
+    pos.x(e.pageX)
+    pos.y(e.pageY)
+})
+
+var items = sea.observableArray();
+setTimeout(function(){
+	items.push('a');
+	setTimeout(function(){
+		items.push('b');
+		setTimeout(function(){
+			items.push('c');
+			setTimeout(function(){
+				items(['d', 'e', 'f', pos.x]);
+				setTimeout(function(){
+					var one = items[1];
+					items[1] = items[0];
+					items[0] = items[1];
+					items.push('g');
+				}, 1000)
+			}, 1000)
+		}, 2000)
+	}, 2000)
+}, 2000)
+
+var ul = document.querySelector('ul')
+var ulComp = sea.computed(function(){
+	items.forEach(function(item){
+		var el = document.createElement('li');
+		el.textContent = item;
+		ul.appendChild(el);
+	})
+})
+
+//setTimeout(function(){
+sea.applyBindings({
+	items: items,
+	pos: pos
+})
+//}, 8000)
+</script>
