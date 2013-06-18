@@ -21,7 +21,6 @@ sea.applyBindings = function(model, opt_el){
 
     controlsChildren = false;
     bindAttrs = getBindAttrs(node);
-    //console.log(node, 'bindAttrs', bindAttrs, 'children', node.childNodes);
 
     if(bindAttrs.length){
 
@@ -30,9 +29,10 @@ sea.applyBindings = function(model, opt_el){
         var currNode = node // closure for loop
           , cmpBinding = sea.compileBinding(currNode.getAttribute('data-' + name), model);
 
-        sea.bindings[name].init(currNode, cmpBinding, model);
+        sea.bindings[name].init(currNode, cmpBinding);
 
-        sea.boundComputedFor(currNode, name, model);
+        // creates a computed that calls the binding's update
+        sea.boundComputedFor(currNode, name, cmpBinding);
       });
 
       // determine if any binding has claimed to control children
@@ -48,6 +48,7 @@ sea.applyBindings = function(model, opt_el){
     }
   }
 }
+
 
 sea._cmpBindings = {};
 
@@ -70,6 +71,7 @@ sea.compileBinding = function(bindingText, context){
   }
 }
 
+
 sea._templates = {}
 
 sea.templateFor = function(el){
@@ -91,9 +93,10 @@ sea.templateFor = function(el){
   return template;
 }
 
+
 sea._boundComputeds = {};
 
-sea.boundComputedFor = function(el, bindingName, opt_model){
+sea.boundComputedFor = function(el, bindingName, cmpBinding){
   var id = el.dataset.seaid;
 
   if(!id){
@@ -104,15 +107,13 @@ sea.boundComputedFor = function(el, bindingName, opt_model){
     return sea._boundComputeds[id];
   }
 
-  opt_model = opt_model || {};
-
-  var cmpBinding = sea.compileBinding(el.getAttribute('data-' + bindingName), opt_model);
   sea._boundComputeds[id] = sea.computed(function(){
     sea.bindings[bindingName].update(el, cmpBinding);
   });
 
   return sea._boundComputeds[id];
 }
+
 
 sea.bindings = {};
 
