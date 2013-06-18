@@ -108,8 +108,7 @@ sea.boundComputedFor = function(el, bindingName, opt_model){
 
   var cmpBinding = sea.compileBinding(el.getAttribute('data-' + bindingName), opt_model);
   sea._boundComputeds[id] = sea.computed(function(){
-    sea.bindings[bindingName].update(el, cmpBinding, opt_model);
-    return opt_model;
+    sea.bindings[bindingName].update(el, cmpBinding);
   });
 
   return sea._boundComputeds[id];
@@ -126,57 +125,39 @@ sea.bindings.text = {
   }
 }
 
-sea.bindings.foreach = {
 
-  controlsChildren: true,
+sea.bindings.foreach = {};
+sea.bindings.foreach.controlsChildren = true;
 
-  init: function(el, cmpAttr){
-    //return false;
-    var items = cmpAttr()
-      , stamper = sea.templateFor(el)
-      , all = document.createDocumentFragment();
+sea.bindings.foreach.init = sea.bindings.foreach.update = function(el, cmpAttr){
+  var items = cmpAttr()
+    // very important that this come before call to children
+    , stamper = sea.templateFor(el)
+    // .templateFor removes the children if there is no cached template,
+    // meaning only two outcomes: there is a template, or there are existing
+    // rendered child nodes
+    , children = Array.prototype
+        .slice.call(el.childNodes)
+        .filter(function(node){ return node.nodeType !== 3 })
+    , all = document.createDocumentFragment();
 
-    items.forEach(function(item, i){
-      var model = {};
-      model.$parent = cmpAttr;
-      model.$data = item;
-      model.$index = i;
-      var clone = stamper.cloneNode(true);
-      sea.applyBindings(model, clone);
-      all.appendChild(clone);
-    });
+  items.forEach(function(item, i){
+    var node = children[i] || stamper.cloneNode(true);
 
+    var model = {};
+    model.$parent = cmpAttr;
+    model.$data = item;
+    model.$index = i;
+    sea.applyBindings(model, node);
+
+    // if no parentNode, node must be new!
+    if(!node.parentNode){
+      all.appendChild(node);
+    }
+  });
+
+  // batch operation
+  if(all.childNodes.length){
     el.appendChild(all);
-  },
-
-  update: function(el, cmpAttr){
-    //return false;
-    var items = cmpAttr()
-      , children = Array.prototype
-          .slice.call(el.childNodes)
-          .filter(function(node){ return node.nodeType !== 3 })
-      , stamper = sea.templateFor(el)
-
-    items.forEach(function(item, i){
-      var node = children[i]
-
-      if(!node){
-        node = stamper.cloneNode(true);
-      }
-
-      var model = {};
-      model.$parent = cmpAttr;
-      model.$data = item;
-      model.$index = i;
-      sea.applyBindings(model, node);
-
-      if(!node.parentNode) {
-        el.appendChild(node);
-      }
-
-      // TODO: destroy previous computed?
-    })
-
   }
 }
-
