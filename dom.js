@@ -101,7 +101,6 @@ sea.boundComputedFor = function(el, bindingName, opt_model){
   }
 
   if(sea._boundComputeds[id]){
-    console.log('found computed for', id)
     return sea._boundComputeds[id];
   }
 
@@ -158,37 +157,24 @@ sea.bindings.foreach = {
           .filter(function(node){ return node.nodeType !== 3 })
       , stamper = sea.templateFor(el)
 
-    //console.log(items, children)
-
     items.forEach(function(item, i){
-      var node = children[i];
-
-      //console.log(item, node);
+      var node = children[i]
 
       if(!node){
         node = stamper.cloneNode(true);
-        var model = {};
-        model.$parent = cmpAttr;
-        model.$data = item;
-        model.$index = i;
-        sea.applyBindings(model, node);
-        el.appendChild(node);
-      } else if(node.dataset.seaid) {
-
-        var computed = sea.boundComputedFor(node, 'foreach');
-        var model = {};
-        model.$parent = cmpAttr;
-        model.$data = item;
-        model.$index = i;
-
-        computed.accessor = function(){
-          sea.bindings.foreach.update(el, cmpBinding, model);
-          return model;
-        }
-
-        computed.accessor.self = computed;
-        // TODO: destroy previous computed?
       }
+
+      var model = {};
+      model.$parent = cmpAttr;
+      model.$data = item;
+      model.$index = i;
+      sea.applyBindings(model, node);
+
+      if(!node.parentNode) {
+        el.appendChild(node);
+      }
+
+      // TODO: destroy previous computed?
     })
 
   }

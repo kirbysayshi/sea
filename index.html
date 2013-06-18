@@ -1,5 +1,5 @@
 <style type="text/css">
-body { position: relative; padding: 1px 0 0 0; margin: 0; overflow: hidden; }
+body { position: relative; padding: 1px 0 0 0; margin: 0; }
 div { background-color: red; width: 50px; height: 50px; position: absolute; }
 </style>
 <div></div>
@@ -45,15 +45,19 @@ setTimeout(function(){
 			setTimeout(function(){
 				items(['d', 'e', 'f', pos.x]);
 				setTimeout(function(){
-					var one = items[1];
-					items[1] = items[0];
-					items[0] = items[1];
+					var one = items()[1];
+					items()[1] = items()[0];
+					items()[0] = one;
 					items.push('g');
+					setTimeout(function(){
+						items.sort();
+						console.log(items(), items().sort(), items())
+					}, 1000)
 				}, 1000)
 			}, 1000)
-		}, 2000)
-	}, 2000)
-}, 2000)
+		}, 1000)
+	}, 1000)
+}, 1000)
 
 var ul = document.querySelector('ul')
 var ulComp = sea.computed(function(){
