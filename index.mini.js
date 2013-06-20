@@ -1,5 +1,5 @@
 
-var sea = {
+var sea = module.exports = {
   _observables: {},
   _called: null
 };
@@ -102,7 +102,7 @@ var observable = sea.observable = function(val, opts){
 }
 
 sea.computed = function(factory){
-  var obs = observable(null, { accessor: factory, id: sea.guid('cmp') });
+  var obs = observable(undefined, { accessor: factory, id: sea.guid('cmp') });
   obs.self.evaluate();
   obs.self.peek.self = obs.self;
   return obs.self.peek;
