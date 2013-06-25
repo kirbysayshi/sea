@@ -30,6 +30,7 @@ var observable = sea.observable = function(val, opts){
       sea.markAsCalled(id);
 
       if(typeof newVal !== 'undefined' && self.peek() !== newVal){
+        console.log(id, 'changed from', self.peek(), newVal);
         self._val = newVal;
         self.notifyDependents();
       }
@@ -49,14 +50,24 @@ var observable = sea.observable = function(val, opts){
       sea._called = {};
       self._val = self.accessor();
 
-      if(oldVal !== self._val) {
-        Object.keys(sea._called).forEach(function(id){
+      //if(oldVal !== self._val) {
+        console.log('accessor changed from', oldVal, 'to', self._val);
+        var calledKeys = Object.keys(sea._called);
+        calledKeys.forEach(function(id){
           var obs = sea._observables[id];
           obs && sea._observables[id].addDependent(self.id);
         });
-      }
+      //}
 
       sea._called = prevRCalled || null;
+      return calledKeys;
+    },
+
+    destroy: function(){
+      self.evaluate().forEach(function(id){
+        var obs = sea._observables[id];
+        obs && sea._observables[id].removeDependent(self.id);
+      });
     },
 
     peek: function(){

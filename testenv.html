@@ -11,7 +11,7 @@ div { background-color: red; width: 50px; height: 50px; position: absolute; }
 	<li data-text="typeof $data === 'function' ? $data() : $data"></li>
 </ul>
 <script type="text/javascript">module = { exports: {} }; exports = module.exports;</script>
-<script type="text/javascript" src="index.mini.js"></script>
+<script type="text/javascript" src="index.js"></script>
 <script type="text/javascript" src="dom.js"></script>
 <script type="text/javascript">
 var pos = {
@@ -36,9 +36,10 @@ document.addEventListener('mousemove', function(e){
     pos.y(e.pageY)
 })
 
-var items = sea.observableArray();
+var items = sea.observableArray([0]);
 setTimeout(function(){
 	items.push('a');
+  console.log(document.querySelectorAll('li')[0].textContent)
 	setTimeout(function(){
 		items.push('b');
 		setTimeout(function(){

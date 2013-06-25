@@ -1,3 +1,5 @@
+var sea = sea || require('./index.js');
+
 sea.applyBindings = function(model, opt_el){
   var el = opt_el || document.body;
 
@@ -46,6 +48,32 @@ sea.applyBindings = function(model, opt_el){
     if(node.childNodes && node.childNodes.length && !controlsChildren){
       nodes.push.apply(nodes, node.childNodes);
     }
+  }
+}
+
+sea.destroyBindings = function(el){
+  var nodes = [el]
+    , node
+    , id
+    , computed;
+
+  while(nodes.length){
+    node = nodes.shift();
+    if(node.dataset && (id = node.dataset.seaid)){
+
+      computed = sea._boundComputeds[id];
+
+      if(computed){
+        // delete the cache to the bound computed
+        delete sea._boundComputeds[id];
+
+        // prevent it from receiving updates
+        computed.self.destroy();
+      }
+    }
+
+    node.childNodes && node.childNodes.length
+      && nodes.push.apply(nodes, node.childNodes);
   }
 }
 
@@ -108,7 +136,7 @@ sea.boundComputedFor = function(el, bindingName, cmpBinding){
   }
 
   sea._boundComputeds[id] = sea.computed(function(){
-    sea.bindings[bindingName].update(el, cmpBinding);
+    return sea.bindings[bindingName].update(el, cmpBinding);
   });
 
   return sea._boundComputeds[id];
@@ -162,3 +190,5 @@ sea.bindings.foreach.init = sea.bindings.foreach.update = function(el, cmpAttr){
     el.appendChild(all);
   }
 }
+
+module.exports = sea;

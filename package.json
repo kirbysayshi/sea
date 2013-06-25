@@ -1,0 +1,23 @@
+{
+  "name": "sea",
+  "version": "0.1.0",
+  "description": "Knockout clone with minimum amounts of code, for fun.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "browserify": "~2.18.1",
+    "mocha": "~1.10.0",
+    "sinon": "~1.7.3"
+  },
+  "scripts": {
+    "pretest": "node_modules/browserify/bin/cmd.js ./test/test.dom.js --standalone tests > test.bundle.js",
+    "test": "node_modules/mocha/bin/mocha --recursive --ui exports"
+  },
+  "repository": "",
+  "author": "Andrew Petersen <kirbysayshi@gmail.com>",
+  "license": "MIT",
+  "gitHead": "66d61e0c158d553f574bf70036d84bd579c6be9f"
+}
