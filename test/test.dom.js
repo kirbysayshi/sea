@@ -112,6 +112,21 @@ exports['Data Binding'] = {
       })
     }
 
+    ,'modelFor': {
+
+      'retrieves same object for same data': function(){
+        var el = document.createElement('div')
+          , parent = { name: 'parent' }
+          , data = { name: 'data' }
+          , index = 2;
+
+        var modelA = sea.bindings.foreach.modelFor(el, parent, data, index)
+          , modelB = sea.bindings.foreach.modelFor(el, parent, data, index)
+
+        assert.strictEqual(modelA, modelB, 'same arguments returns same model');
+      }
+    }
+
     ,'nested observables': {
 
       beforeEach: function(){

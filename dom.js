@@ -31,6 +31,14 @@ sea.dom.breadthChildren = function(el, cb){
   }
 }
 
+sea.dom.idFor = function(el){
+  if(el.dataset){
+    return el.dataset.seaid || (el.dataset.seaid = sea.guid('nde'))
+  } else {
+    return el.seaid || (el.seaid = sea.guid('nde'))
+  }
+}
+
 sea.applyBindings = function(model, opt_el){
   var el = opt_el || document.body;
 
@@ -122,11 +130,7 @@ sea.compileBinding = function(bindingText, context){
 sea._templates = {}
 
 sea.templateFor = function(el){
-  var id = el.dataset.seaid;
-
-  if(!id){
-    id = el.dataset.seaid = sea.guid('nde');
-  }
+  var id = sea.dom.idFor(el);
 
   var template = sea._templates[id];
 
@@ -144,11 +148,7 @@ sea.templateFor = function(el){
 sea._boundComputeds = {};
 
 sea.boundComputedFor = function(el, bindingName, cmpBinding){
-  var id = el.dataset.seaid;
-
-  if(!id){
-    id = el.dataset.seaid = sea.guid('nde');
-  }
+  var id = sea.dom.idFor(el);
 
   if(sea._boundComputeds[id]){
     return sea._boundComputeds[id];
@@ -177,6 +177,32 @@ sea.bindings.text = {
 sea.bindings.foreach = {};
 sea.bindings.foreach.controlsChildren = true;
 
+sea.bindings.foreach._models = {};
+sea.bindings.foreach.modelFor = function(el, parent, data, index){
+  var id = sea.dom.idFor(el);
+  var model = sea.bindings.foreach._models[id] || {};
+
+  // model hasn't changed, return it
+  if(
+    model
+    && model.$parent === parent
+    && model.$data === data
+    && model.$index === index
+  ){
+    return model;
+  }
+
+  // model has changed, update properties...
+  model.$parent = parent;
+  model.$data = data;
+  model.$index = index;
+
+  // ... and cache it for later
+  sea.bindings.foreach._models[id] = model;
+
+  return model;
+}
+
 sea.bindings.foreach.init = function(){}
 sea.bindings.foreach.update = function(el, cmpAttr){
   var items = cmpAttr()
@@ -190,11 +216,8 @@ sea.bindings.foreach.update = function(el, cmpAttr){
 
   items.forEach(function(item, i){
     var node = children[i] || stamper.cloneNode(true);
+    var model = sea.bindings.foreach.modelFor(node, cmpAttr, item, i);
 
-    var model = {};
-    model.$parent = cmpAttr;
-    model.$data = item;
-    model.$index = i;
     sea.applyBindings(model, node);
 
     // if no parentNode, node must be new!
