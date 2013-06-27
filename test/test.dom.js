@@ -14,6 +14,23 @@ exports['Data Binding'] = {
 
   '': ''
 
+  ,'idFor': {
+
+    'returns the same id for a div': function(){
+      var el = document.createElement('div')
+        , id = sea.dom.idFor(el);
+
+      assert.equal(sea.dom.idFor(el), id);
+    }
+
+    ,'returns the same id for a document fragment': function(){
+      var el = document.createDocumentFragment()
+        , id = sea.dom.idFor(el);
+
+      assert.equal(sea.dom.idFor(el), id);
+    }
+  }
+
   ,'destroyBindings': {
 
     before: function(){
@@ -114,7 +131,20 @@ exports['Data Binding'] = {
 
     ,'modelFor': {
 
-      'retrieves same object for same data': function(){
+      'creates object with properties': function(){
+        var el = document.createElement('div')
+          , parent = { name: 'parent' }
+          , data = { name: 'data' }
+          , index = 2;
+
+        var modelA = sea.bindings.foreach.modelFor(el, parent, data, index)
+
+        assert.strictEqual(modelA.$parent, parent, '$parent is present');
+        assert.strictEqual(modelA.$data, data, '$data is present');
+        assert.strictEqual(modelA.$index, index, '$index is present');
+      }
+
+      ,'retrieves same object for same data': function(){
         var el = document.createElement('div')
           , parent = { name: 'parent' }
           , data = { name: 'data' }
@@ -124,6 +154,52 @@ exports['Data Binding'] = {
           , modelB = sea.bindings.foreach.modelFor(el, parent, data, index)
 
         assert.strictEqual(modelA, modelB, 'same arguments returns same model');
+      }
+
+      ,'retrieves same object for same element': function(){
+        var el = document.createElement('div')
+          , parent = { name: 'parent' }
+          , data = { name: 'data' }
+          , index = 2;
+
+        var modelA = sea.bindings.foreach.modelFor(el, parent, data, index);
+        var modelB = sea.bindings.foreach.modelFor(el, parent, data, 3);
+        assert.strictEqual(modelA, modelB, 'same element returns same model');
+        assert.equal(modelA.$index, 3, 'index has been updated');
+      }
+    }
+
+    ,'elModelWillChange': {
+
+      'returns true if model does not exist': function(){
+        var el = document.createElement('div')
+          , parent = { name: 'parent' }
+          , data = { name: 'data' }
+          , index = 2;
+
+        assert.equal(sea.bindings.foreach.elModelWillChange(el, parent, data, index), true);
+      }
+
+      ,'returns true if model will change': function(){
+        var el = document.createElement('div')
+          , parent = { name: 'parent' }
+          , data = { name: 'data' }
+          , index = 2;
+
+        var modelA = sea.bindings.foreach.modelFor(el, parent, data, index);
+        index = 3;
+
+        assert.equal(sea.bindings.foreach.elModelWillChange(el, parent, data, index), true);
+      }
+
+      ,'returns false if model will not change': function(){
+        var el = document.createElement('div')
+          , parent = { name: 'parent' }
+          , data = { name: 'data' }
+          , index = 2;
+
+        var modelA = sea.bindings.foreach.modelFor(el, parent, data, index);
+        assert.equal(sea.bindings.foreach.elModelWillChange(el, parent, data, index), false);
       }
     }
 
@@ -157,7 +233,7 @@ exports['Data Binding'] = {
         })
       }
 
-      /*,'are not rerendered with a push': function(){
+      ,'are not rerendered with a push': function(){
 
         function calledTwice(item, i){
           assert.equal(item.calledTwice, true, 'observable is only accessed twice: ' + item.callCount);
@@ -174,10 +250,9 @@ exports['Data Binding'] = {
 
         items.push(sinon.spy(sea.observable('d')));
         items().forEach(calledTwice)
-
         items.push(sinon.spy(sea.observable('e')));
         items().forEach(calledTwice)
-      }*/
+      }
     }
 
   }

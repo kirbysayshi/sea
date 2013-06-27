@@ -183,12 +183,7 @@ sea.bindings.foreach.modelFor = function(el, parent, data, index){
   var model = sea.bindings.foreach._models[id] || {};
 
   // model hasn't changed, return it
-  if(
-    model
-    && model.$parent === parent
-    && model.$data === data
-    && model.$index === index
-  ){
+  if(!sea.bindings.foreach.elModelWillChange(el, parent, data, index)){
     return model;
   }
 
@@ -203,6 +198,18 @@ sea.bindings.foreach.modelFor = function(el, parent, data, index){
   return model;
 }
 
+sea.bindings.foreach.elModelWillChange = function(el, parent, data, index){
+  var id = sea.dom.idFor(el);
+  var model = sea.bindings.foreach._models[id];
+
+  return !(
+    model
+    && model.$parent === parent
+    && model.$data === data
+    && model.$index === index
+  )
+}
+
 sea.bindings.foreach.init = function(){}
 sea.bindings.foreach.update = function(el, cmpAttr){
   var items = cmpAttr()
@@ -215,10 +222,23 @@ sea.bindings.foreach.update = function(el, cmpAttr){
     , all = document.createDocumentFragment();
 
   items.forEach(function(item, i){
-    var node = children[i] || stamper.cloneNode(true);
-    var model = sea.bindings.foreach.modelFor(node, cmpAttr, item, i);
+    var willChange
+      , node = children[i];
 
-    sea.applyBindings(model, node);
+    if(!node){
+      // clone the template, and grab only the first Element child, ensuring
+      // a single root element for each item
+      node = sea.dom.onlyElementNodes(sea.slice(stamper.cloneNode(true).childNodes))[0];
+      node.parentNode.removeChild(node);
+    }
+
+    willChange = sea.bindings.foreach.elModelWillChange(node, cmpAttr, item, i);
+
+    if(willChange){
+      // cache/update the model, and apply child bindings
+      var model = sea.bindings.foreach.modelFor(node, cmpAttr, item, i);
+      sea.applyBindings(model, node);
+    }
 
     // if no parentNode, node must be new!
     if(!node.parentNode){
