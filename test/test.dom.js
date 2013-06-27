@@ -1,4 +1,5 @@
 var assert = require('assert')
+  , sinon = require('sinon')
   , sea = require('../dom')
 
 // skip running if not in a browser
@@ -110,6 +111,60 @@ exports['Data Binding'] = {
         assert.strictEqual(newlis[i], lis[i]);
       })
     }
+
+    ,'nested observables': {
+
+      beforeEach: function(){
+        var html = ''
+          + '<ul data-foreach="items()">'
+          + '  <li data-text="$data()"></li>'
+          + '</ul>';
+        scratch.innerHTML = html
+      }
+
+      ,'are rendered': function(){
+        var items = sea.observableArray([
+            sinon.spy(sea.observable('a'))
+          , sinon.spy(sea.observable('b'))
+          , sinon.spy(sea.observable('c'))
+        ]);
+        sea.applyBindings({ items: items }, scratch);
+
+        var lis = $('ul li');
+        assert.equal(lis.length, 3);
+
+        items().forEach(function(item){
+          assert.equal(item.calledTwice, true, 'observable is accessed twice, once for text binding, once for creation of bound computed for element');
+        })
+
+        lis.forEach(function(li, i){
+          assert.equal(li.textContent, items()[i]());
+        })
+      }
+
+      /*,'are not rerendered with a push': function(){
+
+        function calledTwice(item, i){
+          assert.equal(item.calledTwice, true, 'observable is only accessed twice: ' + item.callCount);
+        }
+
+        var items = sea.observableArray([
+            sinon.spy(sea.observable('a'))
+          , sinon.spy(sea.observable('b'))
+          , sinon.spy(sea.observable('c'))
+        ]);
+
+        sea.applyBindings({ items: items }, scratch);
+        items().forEach(calledTwice)
+
+        items.push(sinon.spy(sea.observable('d')));
+        items().forEach(calledTwice)
+
+        items.push(sinon.spy(sea.observable('e')));
+        items().forEach(calledTwice)
+      }*/
+    }
+
   }
 
 }

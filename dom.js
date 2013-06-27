@@ -1,5 +1,36 @@
 var sea = sea || require('./index.js');
 
+sea.slice = function(nodeList){ return Array.prototype.slice.call(nodeList) }
+
+sea.dom = {};
+
+sea.dom.select = function(selector, context){
+  context = context || document;
+  return sea.slice(context.querySelectorAll(selector));
+}
+
+sea.dom.onlyElementNodes = function(list){
+  return list.filter(function(node){
+    return node.nodeType === 1;
+  })
+}
+
+// return false to not add childnodes
+sea.dom.breadthChildren = function(el, cb){
+  var nodes = [el]
+    , node
+    , ret
+  while(nodes.length){
+    node = nodes.shift();
+
+    ret = cb(node);
+
+    if(ret !== false && node.childNodes){
+      nodes.push.apply(nodes, node.childNodes);
+    }
+  }
+}
+
 sea.applyBindings = function(model, opt_el){
   var el = opt_el || document.body;
 
@@ -13,16 +44,10 @@ sea.applyBindings = function(model, opt_el){
     return attrs;
   }
 
-  var nodes = [el]
-    , node
-    , bindAttrs
-    , controlsChildren
+  sea.dom.breadthChildren(el, function(node){
 
-  while(nodes.length){
-    node = nodes.shift();
-
-    controlsChildren = false;
-    bindAttrs = getBindAttrs(node);
+    var controlsChildren = false
+      , bindAttrs = getBindAttrs(node);
 
     if(bindAttrs.length){
 
@@ -43,22 +68,19 @@ sea.applyBindings = function(model, opt_el){
       });
     }
 
-    // only push child nodes for processing if they exist and nothing
-    // else claims to control children
-    if(node.childNodes && node.childNodes.length && !controlsChildren){
-      nodes.push.apply(nodes, node.childNodes);
-    }
-  }
+    // if this binding does not control children, return not false to continue
+    // visiting children
+    return !controlsChildren;
+  })
 }
 
 sea.destroyBindings = function(el){
-  var nodes = [el]
-    , node
-    , id
-    , computed;
 
-  while(nodes.length){
-    node = nodes.shift();
+  sea.dom.breadthChildren(el, function(node){
+
+    var computed
+      , id
+
     if(node.dataset && (id = node.dataset.seaid)){
 
       computed = sea._boundComputeds[id];
@@ -71,10 +93,7 @@ sea.destroyBindings = function(el){
         computed.self.destroy();
       }
     }
-
-    node.childNodes && node.childNodes.length
-      && nodes.push.apply(nodes, node.childNodes);
-  }
+  })
 }
 
 
@@ -113,7 +132,7 @@ sea.templateFor = function(el){
 
   if(!template){
     var stamper = document.createDocumentFragment()
-      , children = Array.prototype.slice.call(el.childNodes)
+      , children = sea.slice(el.childNodes)
     children.forEach(function(el){ stamper.appendChild(el); });
     template = sea._templates[id] = stamper;
   }
@@ -158,16 +177,15 @@ sea.bindings.text = {
 sea.bindings.foreach = {};
 sea.bindings.foreach.controlsChildren = true;
 
-sea.bindings.foreach.init = sea.bindings.foreach.update = function(el, cmpAttr){
+sea.bindings.foreach.init = function(){}
+sea.bindings.foreach.update = function(el, cmpAttr){
   var items = cmpAttr()
     // very important that this come before call to children
     , stamper = sea.templateFor(el)
     // .templateFor removes the children if there is no cached template,
     // meaning only two outcomes: there is a template, or there are existing
     // rendered child nodes
-    , children = Array.prototype
-        .slice.call(el.childNodes)
-        .filter(function(node){ return node.nodeType !== 3 })
+    , children = sea.dom.onlyElementNodes(sea.slice(el.childNodes))
     , all = document.createDocumentFragment();
 
   items.forEach(function(item, i){
