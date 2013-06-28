@@ -83,6 +83,33 @@ exports['Data Binding'] = {
     }
   }
 
+  ,'data-css': {
+
+    'depends on observable': {
+
+      before: function(){
+        var html = '<p class="css-class-name-1" data-css="{ \'css-class-name-1\': !a(), \'css-class-name-2\': a() }"></p>';
+        scratch.innerHTML = html;
+      }
+
+      ,'and toggles': function(){
+        var a = sea.observable(true);
+        sea.applyBindings({ a: a }, scratch);
+
+        var p = sea.dom.select('p', scratch)[0];
+        assert.equal(p.classList.contains('css-class-name-2'), true)
+        assert.equal(p.classList.contains('css-class-name-1'), false)
+
+        a(false);
+        assert.equal(a(), false, 'a should be false');
+        console.log(p);
+        assert.equal(p.classList.contains('css-class-name-2'), false)
+        assert.equal(p.classList.contains('css-class-name-1'), true)
+      }
+    }
+
+  }
+
   ,'data-foreach': {
 
     beforeEach: function(){
@@ -308,6 +335,34 @@ exports['Data Binding'] = {
         items().slice(1).forEach(calledTwice);
         // ensure that no silliness is going on
         calledTwice(a);
+      }
+    }
+
+    ,'nested bindings': {
+
+      beforeEach: function(){
+        var html = ''
+          + '<ul data-foreach="items()">'
+          + '  <li data-css="{ \'css-class-name-1\': $data() }" data-text="$data()"></li>'
+          + '</ul>';
+        scratch.innerHTML = html
+      }
+
+      ,'data-css': function(){
+        var items = sea.observableArray([
+            sea.observable('a')
+          , sea.observable('b')
+        ]);
+
+        sea.applyBindings({ items: items }, scratch);
+        var lis = sea.dom.select('li', scratch);
+        assert.equal(lis[0].classList.contains('css-class-name-1'), true);
+        assert.equal(lis[1].classList.contains('css-class-name-1'), true);
+
+        items()[0](false);
+
+        assert.equal(lis[0].classList.contains('css-class-name-1'), false);
+        assert.equal(lis[1].classList.contains('css-class-name-1'), true);
       }
     }
 

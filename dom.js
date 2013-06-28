@@ -31,6 +31,7 @@ sea.dom.breadthChildren = function(el, cb){
   }
 }
 
+// retrieves or sets and retrieves an id for a dom element
 sea.dom.idFor = function(el){
   if(el.dataset){
     return el.dataset.seaid || (el.dataset.seaid = sea.guid('nde'))
@@ -267,6 +268,26 @@ sea.bindings.foreach.update = function(el, cmpAttr){
   if(fragment().childNodes.length){
     el.appendChild(fragment());
   }
+}
+
+
+sea.bindings.css = {}
+
+sea.bindings.css.init = function(el, cmpAttr){}
+
+sea.bindings.css.update = function(el, cmpAttr){
+
+  var classNamesObj = cmpAttr()
+    , classNames = Object.keys(classNamesObj);
+
+  classNames.forEach(function(name){
+    if(classNamesObj[name]){
+      // truthy, add class
+      el.classList.add(name);
+    } else {
+      el.classList.remove(name);
+    }
+  })
 }
 
 module.exports = sea;
