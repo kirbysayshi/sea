@@ -10,6 +10,10 @@ var $  = function(query, ctx){
   return [].slice.call((ctx || scratch).querySelectorAll(query));
 }
 
+function calledTwice(item, i){
+  assert.equal(item.calledTwice, true, 'observable is only accessed twice: ' + item.callCount);
+}
+
 exports['Data Binding'] = {
 
   '': ''
@@ -224,9 +228,8 @@ exports['Data Binding'] = {
         var lis = $('ul li');
         assert.equal(lis.length, 3);
 
-        items().forEach(function(item){
-          assert.equal(item.calledTwice, true, 'observable is accessed twice, once for text binding, once for creation of bound computed for element');
-        })
+        // observable is accessed twice, once for text binding, once for creation of bound computed for element
+        items().forEach(calledTwice)
 
         lis.forEach(function(li, i){
           assert.equal(li.textContent, items()[i]());
@@ -234,10 +237,6 @@ exports['Data Binding'] = {
       }
 
       ,'are not rerendered with a push': function(){
-
-        function calledTwice(item, i){
-          assert.equal(item.calledTwice, true, 'observable is only accessed twice: ' + item.callCount);
-        }
 
         var items = sea.observableArray([
             sinon.spy(sea.observable('a'))
@@ -252,6 +251,29 @@ exports['Data Binding'] = {
         items().forEach(calledTwice)
         items.push(sinon.spy(sea.observable('e')));
         items().forEach(calledTwice)
+      }
+
+      ,'are rerendered if order changes': function(){
+
+        var items = sea.observableArray([
+            sinon.spy(sea.observable('a'))
+          , sinon.spy(sea.observable('b'))
+          , sinon.spy(sea.observable('c'))
+        ]);
+
+        sea.applyBindings({ items: items }, scratch);
+        items().forEach(calledTwice)
+
+        var d = sinon.spy(sea.observable('d'))
+          , a = items()[0];
+
+        items()[0] = d;
+        items.self.notifyDependents(); // manually signal a change
+        assert.equal(d.calledOnce, true, 'd is only evaluated for the text binding since the element computed already exists');
+        // the originals will not have been rerendered
+        items().slice(1).forEach(calledTwice);
+        // ensure that no silliness is going on
+        calledTwice(a);
       }
     }
 
