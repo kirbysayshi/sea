@@ -33,10 +33,11 @@ sea.dom.breadthChildren = function(el, cb){
 
 // retrieves or sets and retrieves an id for a dom element
 sea.dom.idFor = function(el){
+  var prefix = 'nde';
   if(el.dataset){
-    return el.dataset.seaid || (el.dataset.seaid = sea.guid('nde'))
+    return el.dataset.seaid || (el.dataset.seaid = sea.guid(prefix))
   } else {
-    return el.seaid || (el.seaid = sea.guid('nde'))
+    return el.seaid || (el.seaid = sea.guid(prefix))
   }
 }
 
@@ -87,19 +88,25 @@ sea.destroyBindings = function(el){
 
   sea.dom.breadthChildren(el, function(node){
 
-    var computed
+    var computeds
+      , names
       , id
 
     if(node.dataset && (id = node.dataset.seaid)){
 
-      computed = sea._boundComputeds[id];
+      // grab computeds for a particular id, this should be an object
+      // of keys that correspond to binding names
+      computeds = sea._boundComputeds[id];
 
-      if(computed){
-        // delete the cache to the bound computed
+      if(computeds){
+
+        Object.keys(computeds).forEach(function(name){
+          // prevent it from receiving updates
+          computeds[name].self.destroy();
+        })
+
+        // delete the cache to the named computeds
         delete sea._boundComputeds[id];
-
-        // prevent it from receiving updates
-        computed.self.destroy();
       }
     }
   })
@@ -151,15 +158,17 @@ sea._boundComputeds = {};
 sea.boundComputedFor = function(el, bindingName, cmpBinding){
   var id = sea.dom.idFor(el);
 
-  if(sea._boundComputeds[id]){
-    return sea._boundComputeds[id];
+  var boundComputeds = (sea._boundComputeds[id] = sea._boundComputeds[id] || {})
+
+  if(boundComputeds[bindingName]){
+    return boundComputeds[bindingName];
   }
 
-  sea._boundComputeds[id] = sea.computed(function(){
+  boundComputeds[bindingName] = sea.computed(function(){
     return sea.bindings[bindingName].update(el, cmpBinding);
   });
 
-  return sea._boundComputeds[id];
+  return boundComputeds[bindingName];
 }
 
 
