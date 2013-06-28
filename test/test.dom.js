@@ -133,6 +133,40 @@ exports['Data Binding'] = {
       })
     }
 
+    ,'.push multiple items updates once': function(){
+      var items = sea.observableArray(['d', 'e', 'f']);
+      var origUpdate = sea.bindings.foreach.update;
+      var updateSpy = sea.bindings.foreach.update = sinon.spy(sea.bindings.foreach.update);
+      sea.applyBindings({ items: items }, scratch);
+
+      assert.equal(updateSpy.calledOnce, true, 'update method should be called once during applyBindings')
+
+      items.push('g', 'h', 'i', 'j');
+
+      assert.equal(updateSpy.calledTwice, true, 'update method should be called once more after push')
+
+      var lis = $('ul li');
+      lis.forEach(function(li, i){
+        assert.equal(li.textContent, items()[i]);
+      })
+
+      assert.equal(lis.length, 7, 'there should be 7 list items');
+      sea.bindings.foreach.update = origUpdate;
+    }
+
+    ,'.sort rerenders': function(){
+      var items = sea.observableArray(['z', '1', 'x', 'y']);
+      sea.applyBindings({ items: items }, scratch);
+
+      items.sort();
+
+      var lis = $('ul li')
+        , sorted = ['1', 'x', 'y', 'z'];
+      lis.forEach(function(li, i){
+        assert.equal(li.textContent, sorted[i]);
+      })
+    }
+
     ,'modelFor': {
 
       'creates object with properties': function(){
