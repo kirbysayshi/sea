@@ -1,4 +1,5 @@
 var assert = require('assert')
+  , sinon = require('sinon')
   , sea = require('../index')
 
 exports.observable = {
@@ -32,11 +33,12 @@ exports.computed = {
   }
 
   ,'depends on observable': function(){
-    var o = sea.observable(null)
+    var o = sinon.spy(sea.observable(null))
       , c = sea.computed(function(){
         return o();
       })
 
+    assert.equal(o.calledOnce, true, 'dependent observable is only accessed once')
     assert.equal(o.self._dependents[0], c.self.id, 'observable has computed in dependents array');
 
     assert.equal(o(), null)
