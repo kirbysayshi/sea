@@ -214,16 +214,33 @@ sea.bindings.foreach.init = function(){}
 sea.bindings.foreach.update = function(el, cmpAttr){
   var items = cmpAttr()
     // very important that this come before call to children
-    , stamper = sea.templateFor(el)
     // .templateFor removes the children if there is no cached template,
     // meaning only two outcomes: there is a template, or there are existing
     // rendered child nodes
-    , children = sea.dom.onlyElementNodes(sea.slice(el.childNodes))
-    , all = document.createDocumentFragment();
+    , stamper = sea.templateFor(el)
+
+  // memoize and allow for lazy creation/eval
+  var _childNodes = null;
+  function childNodes(){
+    if(!_childNodes){
+      _childNodes = sea.dom.onlyElementNodes(sea.slice(el.childNodes))
+    }
+
+    return _childNodes;
+  }
+
+  // memoize and allow for lazy creation/eval
+  var _fragment = null;
+  function fragment(){
+    if(!_fragment){
+      _fragment = document.createDocumentFragment();
+    }
+    return _fragment;
+  }
 
   items.forEach(function(item, i){
     var willChange
-      , node = children[i];
+      , node = childNodes()[i];
 
     if(!node){
       // clone the template, and grab only the first Element child, ensuring
@@ -242,13 +259,13 @@ sea.bindings.foreach.update = function(el, cmpAttr){
 
     // if no parentNode, node must be new!
     if(!node.parentNode){
-      all.appendChild(node);
+      fragment().appendChild(node);
     }
   });
 
   // batch operation
-  if(all.childNodes.length){
-    el.appendChild(all);
+  if(fragment().childNodes.length){
+    el.appendChild(fragment());
   }
 }
 
