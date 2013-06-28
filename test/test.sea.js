@@ -75,6 +75,20 @@ exports.computed = {
     assert.equal(o.callCount, 5, 'observable was still only accessed 4 times')
   }
 
+  ,'cyclic dependencies': {
+
+    'observable depends on computed that modifies observable': function(){
+      var o = sea.observable('a')
+        , c = sea.computed(function(){
+          return o(o() + 'a');
+        })
+
+      assert.equal(o(), 'aa');
+      assert.equal(c(), 'aa');
+    }
+
+  }
+
   /*,'can be prevented from initial evaluation': function(){
     var accessor = sinon.spy(function(){
       return 'what'
