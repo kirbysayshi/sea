@@ -11,7 +11,24 @@ var $  = function(query, ctx){
 }
 
 function calledTwice(item, i){
-  assert.equal(item.calledTwice, true, 'observable is only accessed twice: ' + item.callCount);
+  assert.equal(item.calledTwice, true, 'observable is only accessed twice: ' + item.callCount + ' index: ' + i);
+}
+
+// HACK: shortcut for assertions!
+sea.bindings.assert = {
+  init: function(el, cmpAttr, rootModel, currentModel){
+
+    Object.keys(assert).forEach(function(assertKey){
+      currentModel[assertKey] = assert[assertKey];
+    })
+
+    // HACK!: delete the already cached binding...
+    delete sea._cmpBindings[el.dataset.assert];
+    // so this one's arguments come through
+    var ret = sea.compileBinding(el.dataset.assert, currentModel)();
+    el.textContent = ret || 'ok';
+  }
+  ,update: function(){}
 }
 
 exports['Data Binding'] = {
@@ -194,6 +211,81 @@ exports['Data Binding'] = {
       })
     }
 
+    ,'special properties': {
+
+      '':''
+
+      ,'$index': function(){
+        var html = ''
+          + '<ul data-foreach="items()">'
+          + '  <li data-text="$index"></li>'
+          + '</ul>';
+        scratch.innerHTML = html
+
+        var items = sea.observableArray([1, 2, 3]);
+        sea.applyBindings({ items: items }, scratch);
+
+        var lis = $('li')
+        assert.equal(lis.length, 3);
+
+        lis.forEach(function(li, i){
+          assert.equal(li.textContent, i, '$index matches nodeList index');
+        })
+      }
+
+      ,'$parent': function(){
+        var html = ''
+          + '<ul data-foreach="items">'
+          + '  <li data-assert="equal($parent.fromRoot, \'fromRoot\')"></li>'
+          + '  <ul data-foreach="$data">'
+          + '    <li data-assert="ok(!$parent.fromRoot, \'fromRoot is not available in child $parent\')"></li>'
+          + '    <li data-assert="notStrictEqual($parent, $root)"></li>'
+          + '  </ul>'
+          + '</ul>';
+        scratch.innerHTML = html
+
+        var items = [[{ a: 1 }], [{ a: 2 }], [{ a: 3 }]];
+        sea.applyBindings({ items: items, fromRoot: 'fromRoot' }, scratch);
+      }
+
+      ,'$data': function(){
+        var html = ''
+          + '<ul data-foreach="items()">'
+          + '  <li data-text="$data"></li>'
+          + '</ul>';
+        scratch.innerHTML = html
+
+        var items = sea.observableArray([1, 2, 3]);
+        sea.applyBindings({ items: items }, scratch);
+
+        var lis = $('li')
+        assert.equal(lis.length, 3);
+
+        lis.forEach(function(li, i){
+          assert.equal(li.textContent, i+1, '$data matches value');
+        })
+      }
+
+      ,'$root': function(){
+        var html = ''
+          + '<ul data-foreach="items">'
+          + '  <ul data-foreach="[0]">'
+          + '    <li data-text="$root.a"></li>'
+          + '  </ul>'
+          + '</ul>';
+        scratch.innerHTML = html
+
+        sea.applyBindings({ items: [1, 2, 3], a: 'a' }, scratch);
+
+        var lis = $('li')
+        assert.equal(lis.length, 3);
+
+        lis.forEach(function(li, i){
+          assert.equal(li.textContent, 'a', '$root.a matches original model');
+        })
+      }
+    }
+
     ,'modelFor': {
 
       'creates object with properties': function(){
@@ -363,6 +455,98 @@ exports['Data Binding'] = {
 
         assert.equal(lis[0].classList.contains('css-class-name-1'), false);
         assert.equal(lis[1].classList.contains('css-class-name-1'), true);
+      }
+
+      ,'data-foreach': {
+
+        beforeEach: function(){
+          var html = ''
+            + '<div data-foreach="tasks()">'
+            + '  <h1 data-text="$data.name"></h1>'
+            + '  <ul data-foreach="$data.assignees()">'
+            + '    <li data-text="$data.name"></li>'
+            + '  </ul>'
+            + '</div>';
+          scratch.innerHTML = html
+
+          this.task1 = {
+             name: 'task1',
+             assignees: sea.observableArray([{name: 'Aang'}, {name: 'Katara'}])
+          }
+
+          this.task2 = {
+            name: 'task2',
+            assignees: sea.observableArray([{name: 'Sokka'}, {name: 'Toph'}, {name: 'Appa'}])
+          }
+
+          this.seamodel = {
+            tasks: sea.observableArray()
+          }
+
+          sea.applyBindings(this.seamodel, scratch);
+        }
+
+        ,'each group of assignees are unique': function(){
+          this.seamodel.tasks.push(this.task1, this.task2);
+
+          var lis = $('li');
+          assert.equal(lis.length, 5, 'expect 5 list items: ' + lis.length);
+
+          lis.forEach(function(li, i){
+            if(i >= 2){
+              assert.equal(li.textContent, this.task2.assignees()[i-2].name)
+            } else {
+              assert.equal(li.textContent, this.task1.assignees()[i].name)
+            }
+          }, this)
+        }
+
+        ,'each task name is unique': function(){
+          this.seamodel.tasks.push(this.task1, this.task2);
+
+          var h1s = $('h1');
+          assert.equal(h1s.length, 2);
+
+          assert.equal(h1s[0].textContent, this.task1.name)
+          assert.equal(h1s[1].textContent, this.task2.name)
+        }
+      }
+    }
+
+  }
+
+  ,'data-if': {
+
+    'when used alone': {
+
+      beforeEach: function(){
+
+        var html = ''
+          + '<div data-if="a()">'
+          + '<p data-text="a()"></p>'
+          + '</div>';
+        scratch.innerHTML = html
+      }
+
+      ,'hides if falsy': function(){
+        var a = sea.observable(false);
+
+        sea.applyBindings({ a: a }, scratch);
+
+        var p = sea.dom.select('p', scratch);
+
+        assert.equal(p.length, 0);
+      }
+
+      ,'shows if truthy': function(){
+        var a = sea.observable('a');
+
+        sea.applyBindings({ a: a }, scratch);
+
+        var p = sea.dom.select('p', scratch);
+
+        assert.equal(p.length, 1);
+        assert.equal(p[0].textContent, 'a');
       }
     }
 

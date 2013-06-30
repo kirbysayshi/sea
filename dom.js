@@ -54,6 +54,8 @@ sea.applyBindings = function(model, opt_el){
     return attrs;
   }
 
+  var rootModel = model.$root || model;
+
   sea.dom.breadthChildren(el, function(node){
 
     var controlsChildren = false
@@ -66,10 +68,13 @@ sea.applyBindings = function(model, opt_el){
         var currNode = node // closure for loop
           , cmpBinding = sea.compileBinding(currNode.getAttribute('data-' + name), model);
 
-        sea.bindings[name].init(currNode, cmpBinding);
+        // only call init if it's defined. It's unneccessary in many cases
+        if(sea.bindings[name].init){
+          sea.bindings[name].init(currNode, cmpBinding, rootModel, model);
+        }
 
         // creates a computed that calls the binding's update
-        sea.boundComputedFor(currNode, name, cmpBinding);
+        sea.boundComputedFor(currNode, name, cmpBinding, rootModel, model);
       });
 
       // determine if any binding has claimed to control children
@@ -86,11 +91,26 @@ sea.applyBindings = function(model, opt_el){
 
 sea.destroyBindings = function(el){
 
+  var bindNames = Object.keys(sea.bindings);
+
+  function getBindAttrs(node){
+    var attrs = bindNames.filter(function(name){
+      return node.getAttribute && node.getAttribute('data-' + name);
+    })
+
+    return attrs;
+  }
+
   sea.dom.breadthChildren(el, function(node){
 
     var computeds
       , names
       , id
+
+    // kill cached compiled bindings
+    getBindAttrs(node).forEach(function(name){
+      delete sea._cmpBindings[node.getAttribute('data-' + name)];
+    })
 
     if(node.dataset && (id = node.dataset.seaid)){
 
@@ -121,9 +141,9 @@ sea.compileBinding = function(bindingText, context){
   var keys = Object.keys(context)
     , args = keys.slice();
 
-  bindingText = ';return ' + bindingText;
+  var fnText = ';return ' + bindingText;
 
-  args.push(bindingText);
+  args.push(fnText);
 
   var fn = sea._cmpBindings[bindingText] || Function.apply(null, args);
   sea._cmpBindings[bindingText] = fn;
@@ -155,7 +175,7 @@ sea.templateFor = function(el){
 
 sea._boundComputeds = {};
 
-sea.boundComputedFor = function(el, bindingName, cmpBinding){
+sea.boundComputedFor = function(el, bindingName, cmpBinding, rootModel, currentModel){
   var id = sea.dom.idFor(el);
 
   var boundComputeds = (sea._boundComputeds[id] = sea._boundComputeds[id] || {})
@@ -165,7 +185,7 @@ sea.boundComputedFor = function(el, bindingName, cmpBinding){
   }
 
   boundComputeds[bindingName] = sea.computed(function(){
-    return sea.bindings[bindingName].update(el, cmpBinding);
+    return sea.bindings[bindingName].update(el, cmpBinding, rootModel, currentModel);
   });
 
   return boundComputeds[bindingName];
@@ -188,7 +208,7 @@ sea.bindings.foreach = {};
 sea.bindings.foreach.controlsChildren = true;
 
 sea.bindings.foreach._models = {};
-sea.bindings.foreach.modelFor = function(el, parent, data, index){
+sea.bindings.foreach.modelFor = function(el, parent, data, index, rootModel){
   var id = sea.dom.idFor(el);
   var model = sea.bindings.foreach._models[id] || {};
 
@@ -201,6 +221,7 @@ sea.bindings.foreach.modelFor = function(el, parent, data, index){
   model.$parent = parent;
   model.$data = data;
   model.$index = index;
+  model.$root = rootModel;
 
   // ... and cache it for later
   sea.bindings.foreach._models[id] = model;
@@ -208,7 +229,7 @@ sea.bindings.foreach.modelFor = function(el, parent, data, index){
   return model;
 }
 
-sea.bindings.foreach.elModelWillChange = function(el, parent, data, index){
+sea.bindings.foreach.elModelWillChange = function(el, parent, data, index, rootModel){
   var id = sea.dom.idFor(el);
   var model = sea.bindings.foreach._models[id];
 
@@ -217,11 +238,12 @@ sea.bindings.foreach.elModelWillChange = function(el, parent, data, index){
     && model.$parent === parent
     && model.$data === data
     && model.$index === index
+    && model.$root === rootModel
   )
 }
 
 sea.bindings.foreach.init = function(){}
-sea.bindings.foreach.update = function(el, cmpAttr){
+sea.bindings.foreach.update = function(el, cmpAttr, rootModel, currentModel){
   var items = cmpAttr()
     // very important that this come before call to children
     // .templateFor removes the children if there is no cached template,
@@ -249,28 +271,38 @@ sea.bindings.foreach.update = function(el, cmpAttr){
   }
 
   items.forEach(function(item, i){
-    var willChange
-      , node = childNodes()[i];
+    var node = childNodes()[i]
+      , willChange
+      , nodes;
 
     if(!node){
-      // clone the template, and grab only the first Element child, ensuring
-      // a single root element for each item
-      node = sea.dom.onlyElementNodes(sea.slice(stamper.cloneNode(true).childNodes))[0];
-      node.parentNode.removeChild(node);
+      // node is a document fragment
+      node = stamper.cloneNode(true);
     }
 
-    willChange = sea.bindings.foreach.elModelWillChange(node, cmpAttr, item, i);
-
-    if(willChange){
-      // cache/update the model, and apply child bindings
-      var model = sea.bindings.foreach.modelFor(node, cmpAttr, item, i);
-      sea.applyBindings(model, node);
+    if(node.nodeType === Node.DOCUMENT_FRAGMENT_NODE){
+      // we only care about the children, otherwise an id would be assigned to
+      // the fragment, which is ethereal and will be discarded
+      nodes = sea.slice(node.childNodes);
+    } else {
+      // it's just a normal node
+      nodes = [node]
     }
 
-    // if no parentNode, node must be new!
-    if(!node.parentNode){
+    // "Templates" can contain multiple nodes without a container.
+    // each node will be assigned a unique id, and different model instances
+    // with the same data
+    nodes.forEach(function(node){
+      willChange = sea.bindings.foreach.elModelWillChange(node, currentModel, item, i, rootModel);
+
+      if(willChange){
+        // cache/update the model, and apply child bindings
+        var model = sea.bindings.foreach.modelFor(node, currentModel, item, i, rootModel);
+        sea.applyBindings(model, node);
+      }
+
       fragment().appendChild(node);
-    }
+    })
   });
 
   // batch operation
@@ -281,9 +313,7 @@ sea.bindings.foreach.update = function(el, cmpAttr){
 
 
 sea.bindings.css = {}
-
 sea.bindings.css.init = function(el, cmpAttr){}
-
 sea.bindings.css.update = function(el, cmpAttr){
 
   var classNamesObj = cmpAttr()
@@ -297,6 +327,35 @@ sea.bindings.css.update = function(el, cmpAttr){
       el.classList.remove(name);
     }
   })
+}
+
+sea.bindings.if = { controlsChildren: true };
+sea.bindings.if.init = function(el, cmpAttr){
+  // consume the children as a template
+  sea.templateFor(el);
+}
+sea.bindings.if.update = function(el, cmpAttr, rootModel){
+
+  var test = cmpAttr()
+    , template = sea.templateFor(el)
+    , newModel;
+
+  // something has changed, so destroy all children and their bindings
+  sea.slice(el.childNodes).forEach(function(child){
+    sea.destroyBindings(child);
+    el.removeChild(child);
+  })
+
+  if(test){
+    // binding returns truthy...
+
+    // TODO: model?
+
+    el.appendChild(template);
+    sea.slice(el.childNodes).forEach(function(child){
+      sea.applyBindings(rootModel, child);
+    })
+  }
 }
 
 module.exports = sea;
