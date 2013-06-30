@@ -41,25 +41,25 @@ sea.dom.idFor = function(el){
   }
 }
 
-sea.applyBindings = function(model, opt_el){
-  var el = opt_el || document.body;
-
+sea.dom.getBindingAttributes = function(node){
   var bindNames = Object.keys(sea.bindings);
 
-  function getBindAttrs(node){
-    var attrs = bindNames.filter(function(name){
-      return node.getAttribute && node.getAttribute('data-' + name);
-    })
+  var attrs = bindNames.filter(function(name){
+    return node.getAttribute && node.getAttribute('data-' + name);
+  })
 
-    return attrs;
-  }
+  return attrs;
+}
+
+sea.applyBindings = function(model, opt_el){
+  var el = opt_el || document.body;
 
   var rootModel = model.$root || model;
 
   sea.dom.breadthChildren(el, function(node){
 
     var controlsChildren = false
-      , bindAttrs = getBindAttrs(node);
+      , bindAttrs = sea.dom.getBindingAttributes(node);
 
     if(bindAttrs.length){
 
@@ -91,16 +91,6 @@ sea.applyBindings = function(model, opt_el){
 
 sea.destroyBindings = function(el){
 
-  var bindNames = Object.keys(sea.bindings);
-
-  function getBindAttrs(node){
-    var attrs = bindNames.filter(function(name){
-      return node.getAttribute && node.getAttribute('data-' + name);
-    })
-
-    return attrs;
-  }
-
   sea.dom.breadthChildren(el, function(node){
 
     var computeds
@@ -108,7 +98,7 @@ sea.destroyBindings = function(el){
       , id
 
     // kill cached compiled bindings
-    getBindAttrs(node).forEach(function(name){
+    sea.dom.getBindingAttributes(node).forEach(function(name){
       delete sea._cmpBindings[node.getAttribute('data-' + name)];
     })
 
@@ -328,6 +318,7 @@ sea.bindings.css.update = function(el, cmpAttr){
     }
   })
 }
+
 
 sea.bindings.if = { controlsChildren: true };
 sea.bindings.if.init = function(el, cmpAttr){
