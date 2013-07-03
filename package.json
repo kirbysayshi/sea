@@ -13,7 +13,7 @@
     "sinon": "~1.7.3"
   },
   "scripts": {
-    "pretest": "node_modules/browserify/bin/cmd.js ./test/test.dom.js --standalone tests > test.bundle.js && node_modules/browserify/bin/cmd.js ./dom.js --standalone sea > sea.browser.js",
+    "pretest": "node_modules/browserify/bin/cmd.js ./test/test.dom.js --standalone tests > test.bundle.js && node_modules/browserify/bin/cmd.js ./index.databind.js --standalone sea > sea.browser.js",
     "test": "node_modules/mocha/bin/mocha --recursive --ui exports"
   },
   "repository": "",

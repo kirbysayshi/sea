@@ -1,6 +1,6 @@
 var assert = require('assert')
   , sinon = require('sinon')
-  , sea = require('../dom')
+  , sea = require('../index.databind')
 
 // skip running if not in a browser
 if(typeof window === 'undefined') return;
