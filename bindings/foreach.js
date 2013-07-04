@@ -97,9 +97,21 @@ exports.update = function(el, cmpAttr, rootModel, currentModel){
         databind.applyBindings(model, node);
       }
 
-      fragment().appendChild(node);
-    })
+      if(
+        node.parentNode
+        && node.parentNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE
+      ){
+        fragment().appendChild(node);
+      }
+    });
   });
+
+  // remove remaining elements in the event that items were removed
+  if(childNodes().length > items.length){
+    childNodes().slice(items.length).forEach(function(node){
+      node.parentNode.removeChild(node);
+    });
+  }
 
   // batch operation
   if(fragment().childNodes.length){

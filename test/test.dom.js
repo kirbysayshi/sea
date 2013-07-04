@@ -211,6 +211,19 @@ exports['Data Binding'] = {
       })
     }
 
+    ,'.splice removes elements': function(){
+      var items = sea.observableArray(['a', 'b', 'c']);
+      sea.applyBindings({ items: items }, scratch);
+
+      items.splice(1, 1);
+
+      var lis = $('ul li');
+      assert.equal(lis.length, 2, 'expect 2 elements: ' + lis.length);
+      lis.forEach(function(li, i){
+        assert.equal(li.textContent, items()[i]);
+      })
+    }
+
     ,'special properties': {
 
       '':''
