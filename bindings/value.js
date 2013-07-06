@@ -1,7 +1,9 @@
 
+var dom = require('../domutil')
+
 exports.init = function(el, cmpAttr, rootModel, currentModel){
   var accessor = cmpAttr();
-  el.addEventListener('keyup', function(e){
+  dom.evman.on(el, 'keyup', function(e){
     accessor(el.value);
   })
 }

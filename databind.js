@@ -61,6 +61,9 @@ exports.destroyBindings = sea.destroyBindings = function(el){
       delete sea._cmpBindings[node.getAttribute('data-' + name)];
     })
 
+    // unbind all events, hopefully
+    dom.evman.off(node);
+
     if(node.dataset && (id = node.dataset.seaid)){
 
       // grab computeds for a particular id, this should be an object
