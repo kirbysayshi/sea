@@ -19,6 +19,17 @@ exports.modelFor = function(el, parent, data, index, rootModel){
   model.$index = index;
   model.$root = rootModel;
 
+  // export the other properties into this "scope"
+  var keys = typeof data === 'object' && Object.keys(data);
+  var validIdentifier = /^[$_a-zA-Z][$_0-9a-zA-Z]*$/g;
+  if(keys){
+    keys.forEach(function(key){
+      if(key.search(validIdentifier) > -1){
+        model[key] = data[key];
+      }
+    })
+  }
+
   // ... and cache it for later
   exports._models[id] = model;
 
@@ -97,6 +108,7 @@ exports.update = function(el, cmpAttr, rootModel, currentModel){
         databind.applyBindings(model, node);
       }
 
+      // only append the node to the fragment if the node is new
       if(
         node.parentNode
         && node.parentNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE
@@ -110,6 +122,7 @@ exports.update = function(el, cmpAttr, rootModel, currentModel){
   if(childNodes().length > items.length){
     childNodes().slice(items.length).forEach(function(node){
       node.parentNode.removeChild(node);
+      databind.destroyBindings(node);
     });
   }
 

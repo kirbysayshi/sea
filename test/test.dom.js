@@ -224,6 +224,43 @@ exports['Data Binding'] = {
       })
     }
 
+    ,'nested properties': {
+
+      '': ''
+
+      ,beforeEach: function(){
+        var html = ''
+          + '<ul data-foreach="items()">'
+          + '  <li data-text="name"></li>'
+          + '</ul>';
+        scratch.innerHTML = html
+      }
+
+      ,'are exposed to the scope': function(){
+        var items = sea.observableArray([{ name: 'a' }, { name: 'b' }]);
+        sea.applyBindings({ items: items }, scratch);
+
+        var lis = $('ul li');
+        assert.equal(lis.length, 2, 'expect 2 elements: ' + lis.length);
+        lis.forEach(function(li, i){
+          assert.equal(li.textContent, items()[i].name);
+        })
+      }
+
+      ,'are exposed to the scope even if empty when bindings applied': function(){
+        var items = sea.observableArray();
+        sea.applyBindings({ items: items }, scratch);
+
+        items.push({ name: 'a' }, { name: 'b' });
+
+        var lis = $('ul li');
+        assert.equal(lis.length, 2, 'expect 2 elements: ' + lis.length);
+        lis.forEach(function(li, i){
+          assert.equal(li.textContent, items()[i].name);
+        })
+      }
+    }
+
     ,'special properties': {
 
       '':''
