@@ -29,8 +29,10 @@ exports.applyBindings = sea.applyBindings = function(model, opt_el){
           sea.bindings[name].init(currNode, cmpBinding, rootModel, model);
         }
 
-        // creates a computed that calls the binding's update
-        exports.boundComputedFor(currNode, name, cmpBinding, rootModel, model);
+        if(sea.bindings[name].update){
+          // creates a computed that calls the binding's update
+          exports.boundComputedFor(currNode, name, cmpBinding, rootModel, model);
+        }
       });
 
       // determine if any binding has claimed to control children
