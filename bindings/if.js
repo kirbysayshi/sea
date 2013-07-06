@@ -7,7 +7,7 @@ exports.init = function(el, cmpAttr){
   // consume the children as a template
   databind.templateFor(el);
 }
-exports.update = function(el, cmpAttr, rootModel){
+exports.update = function(el, cmpAttr, rootModel, currentModel){
 
   var test = cmpAttr()
     , template = databind.templateFor(el)
@@ -22,11 +22,9 @@ exports.update = function(el, cmpAttr, rootModel){
   if(test){
     // binding returns truthy...
 
-    // TODO: model?
-
     el.appendChild(template);
     dom.slice(el.childNodes).forEach(function(child){
-      databind.applyBindings(rootModel, child);
+      databind.applyBindings(currentModel, child);
     })
   }
 }
