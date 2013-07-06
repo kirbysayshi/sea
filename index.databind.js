@@ -2,6 +2,8 @@ var sea = module.exports = require('./index')
 
 sea.dom = require('./domutil')
 
+require('./databind');
+
 sea.bindings = {};
 sea.bindings.value = require('./bindings/value')
 sea.bindings.if = require('./bindings/if')
