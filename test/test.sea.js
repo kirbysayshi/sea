@@ -18,8 +18,9 @@ exports.observable = {
 }
 
 exports.computed = {
+  '': ''
 
-  'defaults to undefined': function(){
+  ,'defaults to undefined': function(){
     var o = sea.computed();
     assert.equal(o(), undefined);
   }
@@ -44,10 +45,23 @@ exports.computed = {
     assert.equal(o(), null)
     assert.equal(c(), null)
     assert.equal(o('yes'), 'yes')
-    assert.equal(o.callCount, 4, 'observable accessor should be called twice more, once to set, once via computed')
+    assert.equal(o.callCount, 4, 'observable accessor should be called twice more, once to set, once via computed: '+o.callCount)
     assert.equal(c(), 'yes')
     assert.equal(o('no'), 'no')
     assert.equal(c(), 'no')
+  }
+
+  ,'depends on computed': function(){
+    var o = sinon.spy(sea.observable(null))
+      , c1 = sea.computed(function(){
+        return o();
+      })
+      , c2 = sea.computed(function(){
+        return c1();
+      })
+
+    o('yes');
+    assert.equal(c2(), 'yes', 'c2 should be yes: ' + c2());
   }
 
   ,'.destroy prevents further recomputes': function(){
@@ -72,7 +86,7 @@ exports.computed = {
     assert.notEqual(o.self._dependents[0], c.self.id, 'observable no longer has computed in dependents array');
 
     c();
-    assert.equal(o.callCount, 5, 'observable was still only accessed 4 times')
+    assert.equal(o.callCount, 5, 'observable was still only accessed 5 times: '+o.callCount)
   }
 
   ,'cyclic dependencies': {
@@ -88,14 +102,6 @@ exports.computed = {
     }
 
   }
-
-  /*,'can be prevented from initial evaluation': function(){
-    var accessor = sinon.spy(function(){
-      return 'what'
-    })
-
-    var c = sea.computed(accessor, { : false });
-  }*/
 }
 
 exports.observableArray = {
