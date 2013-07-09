@@ -10,3 +10,11 @@ sea.bindings.if = require('./bindings/if')
 sea.bindings.css = require('./bindings/css')
 sea.bindings.text = require('./bindings/text')
 sea.bindings.foreach = require('./bindings/foreach')
+sea.bindings.checked = require('./bindings/checked')
+
+var domevent = sea.domevent = require('./bindings/domevent')
+
+sea.bindings.click = domevent('click')
+sea.bindings.dblclick = domevent('dblclick')
+sea.bindings.keydown = domevent('keydown')
+sea.bindings.keyup = domevent('keyup')

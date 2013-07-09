@@ -1,9 +1,10 @@
 var databind = require('../databind')
   , dom = require('../domutil')
+  , sea = require('../index')
 
 exports.controlsChildren = true;
 
-exports.init = function(el, cmpAttr){
+exports.init = function(el, cmpAttr, rootModel, currentModel){
   // consume the children as a template
   databind.templateFor(el);
 }
@@ -14,16 +15,17 @@ exports.update = function(el, cmpAttr, rootModel, currentModel){
     , newModel;
 
   // something has changed, so destroy all children and their databind
-  dom.slice(el.childNodes).forEach(function(child){
+  sea.slice(el.childNodes).forEach(function(child){
     databind.destroyBindings(child);
     el.removeChild(child);
   })
 
+  // binding returns truthy...
   if(test){
-    // binding returns truthy...
+    template = template.cloneNode(true);
 
     el.appendChild(template);
-    dom.slice(el.childNodes).forEach(function(child){
+    sea.slice(el.childNodes).forEach(function(child){
       databind.applyBindings(currentModel, child);
     })
   }

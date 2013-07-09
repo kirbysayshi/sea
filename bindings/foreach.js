@@ -1,5 +1,6 @@
 var dom = require('../domutil')
   , databind = require('../index.databind')
+  , sea = require('../index')
 
 exports.controlsChildren = true;
 
@@ -9,7 +10,7 @@ exports.modelFor = function(el, parent, data, index, rootModel){
   var model = exports._models[id] || {};
 
   // model hasn't changed, return it
-  if(!exports.elModelWillChange(el, parent, data, index)){
+  if(!exports.elModelWillChange(el, parent, data, index, rootModel)){
     return model;
   }
 
@@ -62,7 +63,7 @@ exports.update = function(el, cmpAttr, rootModel, currentModel){
   var _childNodes = null;
   function childNodes(){
     if(!_childNodes){
-      _childNodes = dom.onlyElementNodes(dom.slice(el.childNodes))
+      _childNodes = dom.onlyElementNodes(sea.slice(el.childNodes))
     }
 
     return _childNodes;
@@ -90,7 +91,7 @@ exports.update = function(el, cmpAttr, rootModel, currentModel){
     if(node.nodeType === Node.DOCUMENT_FRAGMENT_NODE){
       // we only care about the children, otherwise an id would be assigned to
       // the fragment, which is ethereal and will be discarded
-      nodes = dom.slice(node.childNodes);
+      nodes = sea.slice(node.childNodes);
     } else {
       // it's just a normal node
       nodes = [node]

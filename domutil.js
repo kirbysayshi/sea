@@ -1,10 +1,8 @@
 var sea = require('./index.js');
 
-exports.slice = function(nodeList){ return Array.prototype.slice.call(nodeList) }
-
 exports.select = function(selector, context){
   context = context || document;
-  return exports.slice(context.querySelectorAll(selector));
+  return sea.slice(context.querySelectorAll(selector));
 }
 
 exports.onlyElementNodes = function(list){
@@ -49,7 +47,7 @@ var evman = exports.evman = {
   off: function(opt_el, opt_event, opt_handler){
     evman.handlers = evman.handlers.filter(function(binding, i){
       if(
-        (el === binding.el || !opt_el)
+        (binding.el === opt_el || !opt_el)
         && (binding.event === opt_event || !opt_event)
         && (binding.handler === opt_handler || !opt_handler)
       ){
