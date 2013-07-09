@@ -5,6 +5,8 @@ var sea = module.exports = {
   _debug: false
 };
 
+sea.slice = function(thing){ return Array.prototype.slice.call(thing) }
+
 sea.guid = (function(){
   var guid = 0;
   return function(type){
@@ -51,8 +53,13 @@ var observable = sea.observable = function(val, opts){
       sea._called = {};
       self._val = self.accessor();
 
+      sea._debug && console.log('accessor changed from', oldVal, 'to', self._val);
+
+      if(oldVal !== self._val) {
+        self.notifyDependents();
+      }
+
       //if(oldVal !== self._val) {
-        sea._debug && console.log('accessor changed from', oldVal, 'to', self._val);
         var calledKeys = Object.keys(sea._called);
         calledKeys.forEach(function(id){
           var obs = sea._observables[id];
@@ -109,6 +116,7 @@ var observable = sea.observable = function(val, opts){
 
   // allow access to instance
   self.accessor.self = self;
+  self.accessor.valueOf = self.peek;
 
   return self.accessor;
 }
@@ -116,8 +124,7 @@ var observable = sea.observable = function(val, opts){
 sea.computed = function(factory){
   var obs = observable(undefined, { accessor: factory, id: sea.guid('cmp') });
   obs.self.evaluate();
-  obs.self.peek.self = obs.self;
-  return obs.self.peek;
+  return obs.self.accessor;
 }
 
 sea.observableArray = function(val){
