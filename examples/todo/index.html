@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="bower_components/todomvc-common/base.css">
+
+<section id="todoapp">
+
+	<header id="header">
+		<h1>todos</h1>
+		<input id="new-todo" placeholder="What needs to be done?" autofocus
+			data-value="current"
+			data-enterkey="add">
+	</header>
+
+	<section id="main">
+		<input id="toggle-all" data-click="completeAll" type="checkbox">
+		<label for="toggle-all">Mark all as complete</label>
+		<ul id="todo-list" data-foreach="filteredTodos()" class="">
+			<li data-css="{ completed: completed(), editing: editing() }">
+				<div data-if="editing()">
+					<input class="edit" type="text"
+						autofocus
+						data-value="title"
+						data-enterkey="$root.stopEdit">
+				</div>
+				<div data-if="!editing()">
+					<input class="toggle" type="checkbox" data-checked="completed">
+					<label data-text="title()" data-dblclick="$root.edit"></label>
+					<button class="destroy" data-click="$root.remove"></button>
+				</div>
+			</li>
+		</ul>
+	</section>
+
+	<footer id="footer" data-visible="todos().length">
+		<span id="todo-count">
+			<strong data-text="remaining()"></strong>
+			<span data-text="(remaining().length === 1 ? 'item' : 'items') + ' left'"></span>
+		</span>
+		<ul id="filters">
+			<li><a data-css="{ selected: filterMode() == 'all' }" href="#/all">All</a></li>
+			<li><a data-css="{ selected: filterMode() == 'active' }" href="#/active">Active</a></li>
+			<li><a data-css="{ selected: filterMode() == 'completed' }" href="#/completed">Completed</a></li>
+		</ul>
+		<button id="clear-completed" data-visible="completed()" data-click="clearCompleted">
+			Clear Completed (<span data-text="completed()"></span>)
+		</button>
+	</footer>
+
+</section>
+
+<footer id="info">
+	<p>Double-click to edit a todo</p>
+	<p>Original Knockout version from <a href="https://github.com/ashish01/knockoutjs-todos">Ashish Sharma</a></p>
+	<p>Rewritten to use Knockout 2.0 and standard template by <a href="http://knockmeout.net">Ryan Niemeyer</a></p>
+	<p>Patches/fixes for cross-browser compat: <a href="http://twitter.com/addyosmani">Addy Osmani</a></p>
+	<p>Part of <a href="http://todomvc.com">TodoMVC</a></p>
+</footer>
+
+<script src="bower_components/todomvc-common/base.js"></script>
+<script type="text/javascript" src="../../sea.browser.js"></script>
+
+<script type="text/javascript">
+
+sea.bindings.enterkey = {}
+sea.bindings.enterkey.init = function(el, cmpAttr, rootModel, currentModel){
+	var accessor = cmpAttr();
+	sea.dom.evman.on(el, 'keyup', function(e){
+		if(e.which === 13){
+			accessor(currentModel.$data || currentModel, el, e);
+		}
+	})
+}
+
+
+function Todo(title, completed){
+	this.title = sea.observable(title);
+	this.completed = sea.observable(completed);
+	this.editing = sea.observable(false);
+}
+
+
+function TodoApp(){
+	var self = this;
+
+	self.todos = sea.observableArray();
+	self.current = sea.observable('');
+	self.filterMode = sea.observable(window.location.hash.replace('#/', '') || 'all');
+
+	window.addEventListener('hashchange', function(e){
+		e.preventDefault();
+		self.filterMode(window.location.hash.replace('#/', ''))
+	}, false);
+
+	self.filteredTodos = sea.computed(function(){
+		if(self.filterMode() === 'all'){
+			return self.todos();
+		}
+
+		if(self.filterMode() === 'active'){
+			return self.todos().filter(function(todo){
+				return !todo.completed()
+			})
+		}
+
+		if(self.filterMode() === 'completed'){
+			return self.todos().filter(function(todo){
+				return todo.completed()
+			})
+		}
+	})
+
+	self.trim = function(val){
+		return val.replace(/^\s+|\s+$/g, '')
+	}
+
+	self.add = function(){
+		var nonWhitespace = self.trim(self.current());
+		if(nonWhitespace.length){
+			var t = new Todo(self.current(), false);
+			self.current('');
+			self.todos.unshift(t);
+		}
+	}
+
+	self.edit = function(todo, el){
+		self.todos.forEach(function(todo){ todo.editing(false); });
+		todo.editing(true);
+	}
+
+	self.stopEdit = function(todo, el, e){
+		todo.title(self.trim(todo.title()));
+		todo.editing(false);
+	}
+
+	self.remove = function(todo){
+		var idx = self.todos().indexOf(todo)
+		self.todos.splice(idx, 1);
+	}
+
+	self.remaining = sea.computed(function(){
+		return self.todos.filter(function(todo){
+			return !todo.completed();
+		}).length;
+	})
+
+	self.completed = sea.computed(function(){
+		return self.todos.filter(function(todo){
+			return todo.completed();
+		}).length;
+	});
+
+	self.clearCompleted = function(){
+		var unfinshed = self.todos().filter(function(todo){
+			return !todo.completed();
+		})
+		self.todos(unfinshed);
+	}
+
+	self.completeAll = function(root, checkbox){
+		self.todos.forEach(function(todo){
+			todo.completed(checkbox.checked ? true : false);
+		})
+	}
+}
+
+var app = new TodoApp();
+
+sea.applyBindings(app);
+</script>
