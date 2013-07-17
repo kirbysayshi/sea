@@ -687,4 +687,74 @@ exports['Data Binding'] = {
     }
   }
 
+  ,'data-style': {
+
+    'sets basic styles': {
+
+      beforeEach: function(){
+        var html = ''
+          + '<div data-style="{ backgroundColor: \'blue\' }"></div>';
+        scratch.innerHTML = html
+      }
+
+      ,'on a div': function(){
+        sea.applyBindings({}, scratch);
+        var box = $('div')[0];
+
+        assert.equal(box.style.backgroundColor, 'blue', 'should have blue background');
+      }
+    }
+
+    ,'sets more advanced values': {
+
+      beforeEach: function(){
+        var html = ''
+          + '<div data-style="{ backgroundColor: a() }"></div>';
+        scratch.innerHTML = html
+      }
+
+      ,'based on an observable': function(){
+        var a = sea.observable('blue');
+        sea.applyBindings({ a: a }, scratch);
+        var box = $('div')[0];
+
+        assert.equal(box.style.backgroundColor, 'blue', 'should have blue background');
+        a('white');
+        assert.equal(box.style.backgroundColor, 'white', 'should have white background after observable change');
+      }
+
+      ,'based on an computed': function(){
+        var b = sea.observable('blue');
+        var a = sea.computed(function(newVal){
+            return b();
+          });
+        sea.applyBindings({ a: a }, scratch);
+        var box = $('div')[0];
+
+        assert.equal(box.style.backgroundColor, 'blue', 'should have blue background');
+        b('white');
+        assert.equal(box.style.backgroundColor, 'white', 'should have white background after computed change');
+      }
+    }
+
+    ,'and can use expressions': {
+
+      beforeEach: function(){
+        var html = ''
+          + '<div data-style="{ backgroundColor: a() > 2 ? \'blue\' : \'white\' }"></div>';
+        scratch.innerHTML = html
+      }
+
+      ,'based on an observable': function(){
+        var a = sea.observable(3);
+        sea.applyBindings({ a: a }, scratch);
+        var box = $('div')[0];
+
+        assert.equal(box.style.backgroundColor, 'blue', 'should have blue background');
+        a(0);
+        assert.equal(box.style.backgroundColor, 'white', 'should have white background after observable change');
+      }
+    }
+  }
+
 }

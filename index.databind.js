@@ -11,6 +11,7 @@ sea.bindings.css = require('./bindings/css')
 sea.bindings.text = require('./bindings/text')
 sea.bindings.foreach = require('./bindings/foreach')
 sea.bindings.checked = require('./bindings/checked')
+sea.bindings.style = require('./bindings/style')
 
 var domevent = sea.domevent = require('./bindings/domevent')
 

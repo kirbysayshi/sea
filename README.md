@@ -80,6 +80,8 @@ Current Bindings
   - `data-dblclick="handler"`
   - `data-keydown="handler"`
   - `data-keyup="handler"`
+- data-style: updates an element's style properties according to an object map
+  - `data-style="{ color: someObservable(), lineHeight: anotherObservable() > 2 ? '5px' : '2px' }"`
 
 On Cyclic Dependencies
 ----------------------
