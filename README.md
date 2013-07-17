@@ -75,7 +75,7 @@ Current Bindings
   - Also supports `$parent`, `$root`, `$data`, and `$index` for each interation
 - data-checked: keeps a checkbox input in two-way sync with an observable
   - `data-checked="someObservable"` (notice how it's not called, just referenced)
-- data-_DOMEventName_: shortcuts for common event handlers, and it's _very_ easy to add more (see [index.databind.js](index.databind.js))
+- data-DOMEventName: shortcuts for common event handlers, and it's _very_ easy to add more (see [index.databind.js](index.databind.js))
   - `data-click="handler"`
   - `data-dblclick="handler"`
   - `data-keydown="handler"`
