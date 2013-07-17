@@ -35,7 +35,7 @@ In node:
 Examples:
 ---------
 
-See [examples/todo/index.html][] for a fully functioning TodoMVC-esque example.
+See [examples/todo/index.html](examples/todo/index.html) for a fully functioning TodoMVC-esque example.
 
 ### Computed property depends on observable
 
